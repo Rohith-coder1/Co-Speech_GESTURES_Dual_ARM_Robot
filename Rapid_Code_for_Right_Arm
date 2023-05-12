@@ -1,0 +1,71 @@
+MODULE Module1
+    VAR socketdev serverSocket;
+    VAR socketdev clientSocket;
+    VAR string axis1:="";
+    VAR string axis2:="";
+    VAR string axis7:="";
+    VAR string axis3:="";
+    VAR bool ok;
+    VAR string str1;
+    VAR string str2;
+    VAR string str3;
+    VAR string str4;
+    VAR string data;
+    VAR num length;
+    VAR pos pos1;
+    VAR string str;
+    VAR num r_j1;
+    VAR num r_j2;
+    VAR num r_j7;
+    VAR num r_j3;
+    VAR num r_j1_array{500};
+    VAR num r_j2_array{500};
+    VAR num r_j7_array{500};
+    VAR num r_j3_array{500};
+    VAR num r_end{500,3};
+    VAR bool flag:=TRUE;
+    PERS jointtarget jpos:=[[-80,-94.5053,-5.9841,0,11.92,0],[46.3302,9E+9,9E+9,9E+9,9E+9,9E+9]];
+    PROC main()
+        SocketCreate clientSocket;
+        SocketConnect clientSocket,"192.168.188.96",44444;
+        SocketReceive clientSocket\Str:=str1;
+        ok:=StrToVal(str1,length);
+        FOR i FROM 1 TO length DO
+            SocketSend clientSocket\Str:="start";
+            SocketReceive clientSocket\Str:=axis1;
+            ok:=StrToVal(axis1,r_j1);
+            r_j1_array{i}:=r_j1;
+            SocketSend clientSocket\Str:="r1_received";
+            SocketReceive clientSocket\Str:=axis2;
+            ok:=StrToVal(axis2,r_j2);
+            r_j2_array{i}:=r_j2;
+            SocketSend clientSocket\Str:="r2_received";
+            SocketReceive clientSocket\Str:=axis7;
+            ok:=StrToVal(axis7,r_j7);
+            r_j7_array{i}:=r_j7;
+            SocketSend clientSocket\Str:="r7_received";
+            SocketReceive clientSocket\Str:=axis3;
+            ok:=StrToVal(axis3,r_j3);
+            r_j3_array{i}:=r_j3;
+        ENDFOR
+        WaitTime(0.1);
+        FOR i FROM 1 TO length DO
+            jpos.robax.rax_1:=r_j1_array{i};
+            jpos.robax.rax_2:=r_j2_array{i};
+            jpos.extax.eax_a:=r_j7_array{i};
+            jpos.robax.rax_3:=r_j3_array{i};
+            jpos.robax.rax_5:=11.92;
+            MoveAbsJ jpos,v500,fine,tool0;
+            pos1 := CPos();
+            r_end{i,1}:=pos1.x;
+            r_end{i,2}:=pos1.y;
+            r_end{i,3}:=pos1.z;
+        ENDFOR
+       
+        FOR i FROM 1 TO length DO
+            str3:="["+ValToStr(r_end{i,1})+","+ValToStr(r_end{i,2})+","+ValToStr(r_end{i,3})+"]";
+            SocketSend clientSocket\Str:=str3;
+            SocketReceive clientSocket\Str:=str4;
+        ENDFOR
+    ENDPROC
+ENDMODULE
